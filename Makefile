@@ -1,11 +1,11 @@
-#	$OpenBSD: Makefile,v 1.16 2017/07/10 21:30:37 espie Exp $
+#	$OpenBSD: Makefile,v 1.18 2020/07/30 17:45:44 millert Exp $
 
 PROG=	awk
-SRCS=	ytab.c lex.c b.c main.c parse.c proctab.c tran.c lib.c run.c reallocarray.c strlcpy.c strlcat.c
+SRCS=	awkgram.tab.c lex.c b.c main.c parse.c proctab.c tran.c lib.c run.c reallocarray.c strlcpy.c strlcat.c
 PKG_CONFIG?=	pkg-config
 LDADD=	-lm
 DPADD=	${LIBM}
-CLEANFILES+=proctab.c maketab ytab.c ytab.h
+CLEANFILES+=proctab.c maketab awkgram.tab.c awkgram.tab.h
 CURDIR=	$(shell pwd)
 CC?=	cc
 HOSTCC?=	$(CC)
@@ -21,15 +21,14 @@ all: $(PROG)
 $(PROG): proctab.c
 	$(CC) $(CFLAGS) $(SRCS) $(LDFLAGS) $(LDADD) -o $(PROG)
 
-ytab.c ytab.h: awkgram.y
-	${YACC} -o ytab.c -d ${CURDIR}/awkgram.y
+awkgram.tab.c awkgram.tab.h: awkgram.y
+	${YACC} -o awkgram.tab.c -d ${CURDIR}/awkgram.y
 
-BUILDFIRST = ytab.h
-
-proctab.c: ytab.h maketab.c
+proctab.c: awkgram.tab.h maketab.c
 	${HOSTCC} ${HOSTCFLAGS} ${CURDIR}/maketab.c -o maketab
-	./maketab >proctab.c
+	./maketab awkgram.tab.h >proctab.c
 
 install: $(PROG)
 	install -D -m 755 $(PROG) $(DESTDIR)/$(BINDIR)/$(PROG)
 	install -D -m 644 $(PROG).1 $(DESTDIR)/$(MANDIR)/man1/$(PROG).1
+
